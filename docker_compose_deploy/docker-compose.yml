@@ -1,0 +1,66 @@
+version: '3'
+services:
+  loonflow-redis:
+    hostname: loonflow-redis
+    image: redis:latest
+    restart: always
+    ports:
+      - 6379:6379
+    command:
+      redis-server --requirepass loonflow123
+  loonflow-mysql:
+    hostname: loonflow-mysql
+    image: mysql:5.7
+    volumes:
+      - ./loonflow-mysql/data:/var/lib/mysql
+      - ./loonflow-mysql/conf/my.cnf:/etc/my.cnf
+      - ./loonflow-mysql/init:/docker-entrypoint-initdb.d
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 327%aXtaz*z&
+      secure_file_priv:
+
+  loonflow-web:
+    hostname: loonflow-web
+    image: blackholll/loonflow-web:latest
+    volumes:
+      - ./loonflow-media:/var/loonflow-media
+    depends_on:
+      - loonflow-redis
+      - loonflow-mysql
+    ports:
+      - 80:80
+    environment:
+      DB_HOST: loonflow-mysql
+      DB_USER: loonflow
+      DB_PASS: 2Nir9D6&muYq
+      REDIS_HOST: loonflow-redis
+      REDIS_PASS: loonflow123
+    command:
+      - /bin/sh
+      - -c
+      - |
+        /opt/venv/loonflow/bin/uwsgi /opt/loonflow/uwsgi.ini 
+        /usr/local/nginx/sbin/nginx -c /usr/local/nginx/conf/nginx.conf -g "daemon off;"
+
+  loonflow-task:
+    hostname: loonflow-task
+    image: blackholll/loonflow-task:latest
+    depends_on:
+      - loonflow-redis
+      - loonflow-mysql
+    environment:
+      DB_NAME: loonflow
+      DB_HOST: loonflow-mysql
+      DB_USER: loonflow
+      DB_PASS: 2Nir9D6&muYq
+      REDIS_HOST: loonflow-redis
+      REDIS_PASS: loonflow123
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /opt/loonflow
+        /opt/venv/loonflow/bin/celery -A tasks worker -l info -c 8 -Q loonflow
