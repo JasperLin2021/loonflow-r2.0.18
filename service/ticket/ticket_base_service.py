@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from apps.account.models import LoonUser
+from apps.finance.models import LoonAccount, LoonCapitalFlow
 from apps.workflow.models import CustomField
 from apps.ticket.models import TicketRecord, TicketCustomField, TicketFlowLog, TicketUser
 from service.redis_pool import POOL
@@ -729,7 +730,10 @@ class TicketBaseService(BaseService):
         :param ticket_id:
         :return:
         """
-
+        accountAll = LoonAccount.objects.filter(is_deleted=0)
+        card_bank_number = dict()
+        for item in accountAll:
+            card_bank_number[item.id] = item.card_bank + "(" + item.card_number + ")"
 
 
         ticket_obj = TicketRecord.objects.filter(id=ticket_id, is_deleted=0).first()
@@ -794,6 +798,16 @@ class TicketBaseService(BaseService):
                                field_attribute=constant_service_ins.FIELD_ATTRIBUTE_RO, description='',
                                field_choice={}, boolean_field_display={}, default_value=None, field_template='',
                                label={}, placeholder=''))
+        field_list.append(dict(field_key='card_bank_number', field_name=u'结算银行(卡号)', field_value=None, order_id=6,
+                               field_type_id=constant_service_ins.FIELD_TYPE_SELECT,
+                               field_attribute=constant_service_ins.FIELD_ATTRIBUTE_RO, description='',
+                               field_choice=card_bank_number if card_bank_number else {}, boolean_field_display={}, default_value=None, field_template='',
+                               label={}, placeholder=''))
+        field_list.append(dict(field_key='flow_type', field_name=u'流水类型', field_value=None, order_id=130,
+                               field_type_id=constant_service_ins.FIELD_TYPE_SELECT,
+                               field_attribute=constant_service_ins.FIELD_ATTRIBUTE_RO, description='',
+                               field_choice={1: "收入", 2: "支出"}, boolean_field_display={}, default_value=None, field_template='',
+                               label={}, placeholder=''))
         field_list.append(dict(field_key='gmt_created', field_name=u'创建时间',
                                field_value=str(ticket_obj.gmt_created)[:19], order_id=100,
                                field_type_id=constant_service_ins.FIELD_TYPE_STR,
@@ -815,6 +829,7 @@ class TicketBaseService(BaseService):
         # ticket's all custom field
         flag, custom_field_dict = workflow_custom_field_service_ins.get_workflow_custom_field(ticket_obj.workflow_id)
         custom_field_key_list = [key for key, value in custom_field_dict.items()]
+        # 提单人填写字段
         ticket_custom_field_objs = TicketCustomField.objects.filter(ticket_id=ticket_id,
                                                                     field_key__in=custom_field_key_list,
                                                                     is_deleted=0).all()
@@ -1307,7 +1322,34 @@ class TicketBaseService(BaseService):
             from tasks import flow_hook_task  # 放在文件开头会存在循环引用
             flow_hook_task.apply_async(args=[ticket_id], queue='loonflow')
 
-        return True, ''
+
+        if request_data_dict.get("flow_type"):
+            # 增加添加资金流水逻辑
+            account = LoonAccount.objects.filter(id=update_field_dict['card_bank_number']).first()
+            account_balance_amount_before = account.balance_amount
+            total = request_data_dict['refund_amount']
+            if update_field_dict['flow_type'] == "1":
+                capital_flow_type = "收入"
+                account_balance_amount_after = account_balance_amount_before + total
+                LoonAccount.objects.filter(id=account.id).update(
+                    balance_amount=account_balance_amount_after)
+            else:
+                capital_flow_type = "支出"
+                account_balance_amount_after = account_balance_amount_before - total
+                LoonAccount.objects.filter(id=account.id).update(
+                    balance_amount=account_balance_amount_after)
+
+
+            capital_flow_obj = LoonCapitalFlow(creator=username, account=account, account_balance_amount_before=account_balance_amount_before,
+                                               account_balance_amount_after=account_balance_amount_after, total=total,
+                            capital_flow_type=capital_flow_type, ticket_record=ticket_obj)
+
+            capital_flow_obj.save()
+
+
+            return True, ''
+        else:
+            return True, ''
 
     @classmethod
     @auto_log

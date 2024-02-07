@@ -206,6 +206,7 @@ class TicketDetail extends Component<TicketDetailProps, TicketDetailState> {
 
   fetchTicketDetailInfo = async() => {
     const result = await getDetailDetailRequest({ticket_id: this.props.ticketId});
+    console.log("fetchTicketDetailInfo", result)
     if (result.code === 0 ){
       this.fetchCanIntervene(result.data.value.workflow_id);
       this.fetchWorkflowSimpleState(result.data.value.workflow_id);
@@ -216,6 +217,8 @@ class TicketDetail extends Component<TicketDetailProps, TicketDetailState> {
         currentStateId: result.data.value.state_id,
         nowTicketWorkflowId: result.data.value.workflow_id
       })
+
+      console.log("ticketDetailInfoData",result.data.value.field_list)
 
       let formInitValues = {};
       let fieldTypeDict = {}
@@ -278,6 +281,8 @@ class TicketDetail extends Component<TicketDetailProps, TicketDetailState> {
         })
       }
       this.setState({fieldTypeDict});
+      console.log("fieldTypeDict",fieldTypeDict)
+      console.log("formInitValues",formInitValues)
 
       this.formRef.current.setFieldsValue(formInitValues);
     } else {
@@ -537,7 +542,7 @@ class TicketDetail extends Component<TicketDetailProps, TicketDetailState> {
           })
         }
         }
-        
+
       }
       else{
         child = <div>{item.field_value}</div>
@@ -556,7 +561,7 @@ class TicketDetail extends Component<TicketDetailProps, TicketDetailState> {
          },
       })
         ]}
-        
+
         else {
           formItemOptions.rules = [{ required: true, message: `Please input ${item.field_key}` }]
         }

@@ -6,6 +6,8 @@ import UserList from "@/pages/User/User";
 import RoleList from "@/pages/User/Role/RoleList";
 import DeptList from "@/pages/User/Dept/DeptList";
 import TokenList from "@/pages/User/Token/TokenList";
+import AccountList from "@/pages/Finance/AccountList";
+import FlowList from "@/pages/Finance/FlowList";
 
 const { REACT_APP_ENV } = process.env;
 
@@ -137,6 +139,27 @@ export default defineConfig({
           "path": "/users/app",
           "name": "调用权限",
           "component": '../../src/pages/User/Token/TokenList',
+        }
+      ],
+    },
+    {
+      "path": "/finance",
+      "name": "财务管理",
+      // "icon": "dashboard",
+      "icon": "AccountBookOutlined",
+      //access: 'superAdmin',
+      routes: [
+        {
+          "path": "/finance/account",
+          "name": "结算账号",
+          "component": '../../src/pages/Finance/AccountList',
+
+        },
+        {
+          "path": "/finance/flow",
+          "name": "资金流水",
+          "component": '../../src/pages/Finance/FlowList',
+
         }
       ],
     },

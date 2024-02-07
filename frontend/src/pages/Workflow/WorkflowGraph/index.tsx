@@ -35,6 +35,7 @@ const WorkflowGraph = (props) => {
       result.data.workflow_transition_info.map(transitionItem => {
           if (transitionItem.condition_expression !== '[]'){
             let condition_expression_obj = JSON.parse(transitionItem.condition_expression);
+            console.log("condition_expression_obj",condition_expression_obj)
             nodes.push({id: `condition_${transitionItem.id}`, name:'条件表达式', dataType:"sql", type: 'diamond', label:'条件表达式'});
             edges.push({
               source: String(transitionItem.source_state_id),

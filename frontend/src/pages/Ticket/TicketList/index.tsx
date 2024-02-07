@@ -79,6 +79,7 @@ class TicketList extends Component<any, any> {
     const result = await getWorkflowList({per_page: 1000})
     if (result.code === 0) {
       this.setState({workflowResult: result.data.value});
+      console.log("this.state.workflowResult",this.state.workflowResult)
     } else {
       message.error(result.msg);
     }
