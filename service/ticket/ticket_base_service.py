@@ -1065,8 +1065,8 @@ class TicketBaseService(BaseService):
             if flag is False:
                 return False, 'user is not existed or has been deleted'
             else:
-                if user_obj.type_id == constant_service_ins.ACCOUNT_TYPE_SUPER_ADMIN:
-                    return True, 'admin has all ticket view permission'
+                if user_obj.type_id == constant_service_ins.ACCOUNT_TYPE_SUPER_ADMIN or user_obj.type_id == constant_service_ins.ACCOUNT_TYPE_FINANCE_ADMIN:
+                    return True, 'admin and finance_admin has all ticket view permission'
             if username in ticket_obj.relation.split(','):
                 return True, 'user is relation about this ticket, has view permission'
             else:

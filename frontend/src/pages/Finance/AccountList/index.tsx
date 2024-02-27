@@ -254,19 +254,19 @@ class AccountList extends Component<any, any> {
             onFinish={this.onAccountFinish}
           >
             <Form.Item name="holder" label="开户人" rules={[{ required: true }]} initialValue={this.getAccountDetailField('holder')}>
-              <Input />
+              <Input style={{ width:300, textAlign:"center"}}/>
             </Form.Item>
             <Form.Item name="card_bank" label="开户行" rules={[{ required: true }]} initialValue={this.getAccountDetailField('card_bank')}>
-              <Input />
+              <Input style={{ width:300, textAlign:"center"}}/>
             </Form.Item>
             <Form.Item name="card_number" label="开户账号" rules={[{ required: true }]} initialValue={this.getAccountDetailField('card_number')}>
-              <Input />
+              <Input style={{ width:300, textAlign:"center"}}/>
             </Form.Item>
             <Form.Item name="initial_balance_amount" label="初期余额" rules={[{ required: true }]} initialValue={this.getAccountDetailField('initial_balance_amount')}>
-              <InputNumber disabled={this.state.accountDataReadonly}/>
+              <InputNumber disabled={this.state.accountDataReadonly} style={{ width:300, textAlign:"center"}}/>
             </Form.Item>
             <Form.Item name="description" label="描述" rules={[{ required: true }]} initialValue={this.getAccountDetailField('description')}>
-              <Input />
+              <Input style={{ width:300, textAlign:"center"}}/>
             </Form.Item>
             <Form.Item {...tailLayout}>
               <Button type="primary" htmlType="submit">

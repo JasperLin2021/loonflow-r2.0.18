@@ -1,19 +1,19 @@
 import React, { Component } from "react";
 import {Table, Col, Card, DatePicker, Form, Input, InputNumber, Select, Radio, Button, Modal, Row, message} from "antd";
-import {getCapitalFlowList, addCapitalFlow, delCapitalFlowRequest, updateCapitalFlow} from "@/services/finance";
+import {getCapitalFlowList, capitalFlowDetailExecl, getCapitalFlowListType} from "@/services/finance";
 import {getDetailDetailRequest} from "@/services/ticket";
 import moment from 'moment';
-// import classNames from "classnames";
-// import "./myless.less";
 import BraftEditor from 'braft-editor';
 import "braft-editor/dist/index.css";
+import { exportExcel } from '@/utils/excel'
 
 const { RangePicker } = DatePicker;
 
 class CapitalFlowList extends Component<any, any> {
-  constructor(props) {
+  constructor(props: any) {
     super();
     this.state = {
+      searchValue: {},
       capitalFlowTypeResult: [{"id":1, "name":"收入"},{"id":2, "name":"支出"}],
       fileList: {},
       ticketId: 0,
@@ -27,7 +27,7 @@ class CapitalFlowList extends Component<any, any> {
         current: 1,
         total: 0,
         pageSize: 10,
-        onChange: (current) => {
+        onChange: (current: any) => {
           const pagination = { ...this.state.pagination };
           pagination.current = current;
           this.setState( { pagination }, ()=> {
@@ -45,8 +45,9 @@ class CapitalFlowList extends Component<any, any> {
     this.fetchCapitalFlowData({page:1, per_page:10})
   }
 
-  fetchCapitalFlowData = async (params) => {
+  fetchCapitalFlowData = async (params: getCapitalFlowListType) => {
     this.setState({ capitalflowListLoading: true})
+    // //console.log("params",params)
     const result = await getCapitalFlowList(params);
     if (result.code === 0 ) {
       const pagination = { ...this.state.pagination };
@@ -59,31 +60,22 @@ class CapitalFlowList extends Component<any, any> {
         capitalflowListResult: result.data.value,
         pagination
       })
+
+      // //console.log("capitalflowListResult", result.data.value)
     }else {
       message.error(result.msg);
       this.setState({capitalflowListLoading: false});
     }
   }
 
-  searchCapitalFlow =(values)=>{
-
-    if (values.create_time){
-      if (values.create_time[0]){
-        values.create_start = values.create_time[0].format('YYYY-MM-DD HH:mm:ss')
-      }
-      if (values.create_time[1]){
-        values.create_end = values.create_time[1].format('YYYY-MM-DD HH:mm:ss')
-      }
-      delete(values.create_time)
-
-    }
-    console.log(values);
-    this.fetchCapitalFlowData(values)
-    // this.fetchCapitalFlowData({...values, per_page:10, page:1})
+  searchCapitalFlow =()=>{
+    let searchValue = this.state.searchValue
+    // //console.log("searchValue",searchValue)
+    this.fetchCapitalFlowData(searchValue)
   }
 
   showTicketRecordModal = (record: any) => {
-    console.log("record.ticket_record_id",record)
+    // //console.log("record.ticket_record_id",record)
     this.setState({ticketRecordModalVisible:true, ticketId: record});
     this.fetchTicketDetailInfo(record);
   }
@@ -120,10 +112,10 @@ class CapitalFlowList extends Component<any, any> {
   }
 
   fetchTicketDetailInfo = async(record: any) => {
-    // console.log("this.state.ticket_id",this.state.ticket_id)
+    // //console.log("this.state.ticket_id",this.state.ticket_id)
 
     const result = await getDetailDetailRequest({ticket_id: record});
-    console.log("result",result)
+    // //console.log("result",result)
 
     if (result.code === 0 ){
       this.setState({
@@ -141,7 +133,7 @@ class CapitalFlowList extends Component<any, any> {
     //     }
     //     else if ([40, 50, 70].indexOf(result.field_type_id) >= 0) {
     //       formInitValues[result.field_key] = result.field_value? result.field_value.split(','): []
-    //       console.log(formInitValues);
+    //       //console.log(formInitValues);
     //     }
 
     //     else if (result.field_type_id === 80){
@@ -178,8 +170,8 @@ class CapitalFlowList extends Component<any, any> {
 
     //       // newList[result.field_key] = result.field_value.split();
     //       newList[result.field_key] = fileList1
-    //       console.log('newList')
-    //       console.log(newList)
+    //       //console.log('newList')
+    //       //console.log(newList)
     //       // this.setState({ fileList: newList });
     //       formInitValues[result.field_key] = {fileList: fileList1};
 
@@ -190,8 +182,8 @@ class CapitalFlowList extends Component<any, any> {
     //   })
     // }
     // this.setState({fieldTypeDict});
-    // console.log("fieldTypeDict",fieldTypeDict)
-    // console.log("formInitValues",formInitValues)
+    // //console.log("fieldTypeDict",fieldTypeDict)
+    // //console.log("formInitValues",formInitValues)
 
     // this.formRef.current.setFieldsValue(formInitValues);
 
@@ -222,9 +214,9 @@ class CapitalFlowList extends Component<any, any> {
       }else if (item.field_type_id === 40) {
         //多选框
         let result_list = item.field_value?item.field_value.split(','):[]
-        let result_display_list = []
-        result_list.forEach((result0)=>{
-          console.log(result0)
+        let result_display_list: any[] = []
+        result_list.forEach((result0: string | number)=>{
+          //console.log(result0)
           if(item.field_choice[result0]){
             result_display_list.push(item.field_choice[result0])
           }
@@ -239,9 +231,9 @@ class CapitalFlowList extends Component<any, any> {
       } else if (item.field_type_id === 50) {
         //多选下拉列表
         let result_list = item.field_value?item.field_value.split(','):[]
-        let result_display_list = []
-        result_list.forEach((result0)=>{
-          console.log(result0)
+        let result_display_list: any[] = []
+        result_list.forEach((result0: string | number)=>{
+          //console.log(result0)
           if(item.field_choice[result0]){
             result_display_list.push(item.field_choice[result0])
           }
@@ -271,12 +263,12 @@ class CapitalFlowList extends Component<any, any> {
         if(item.field_value.startsWith('[')){
           //为了兼容旧格式，所以这么写
           const urlInfo = JSON.parse(item.field_value)
-          urlInfo.forEach((elem, index)=>{
+          urlInfo.forEach((elem: { url: string | undefined; file_name: string | number | boolean | {} | React.ReactElement<any, string | React.JSXElementConstructor<any>> | React.ReactNodeArray | React.ReactPortal | null | undefined; }, index: any)=>{
             child.push(<a href={elem.url}>{elem.file_name}<br/></a>)
           })
         } else {
           const url_list = item.field_value.split()
-          url_list.forEach((url0)=>{
+          url_list.forEach((url0: string | undefined)=>{
 
             child.push(<a href={url0}>{url0.split('/').slice(-1)[0]}</a>)
           })
@@ -293,7 +285,7 @@ class CapitalFlowList extends Component<any, any> {
         if (item.field_type_id === 80){
           formItemOptions.rules = [{ required: true, message: `Please upload ${item.field_key}` },
         () => ({
-          validator(rule, value) {
+          validator(rule: any, value: { fileList: string | any[]; }) {
             if (value.fileList.length === 0){
               return Promise.reject('please upload file');
             }
@@ -399,7 +391,7 @@ class CapitalFlowList extends Component<any, any> {
       }
       else if (item.field_type_id === 80){
         // 附件import BraftEditor from 'braft-editor'
-        child = <Upload action="api/v1.0/tickets/upload_file" listType="text" onChange={(info)=>this.fileChange(item.field_key, info)} fileList={this.state.fileList[item.field_key]}>
+        child = <Upload action="api/v1.0/tickets/upload_file" listType="text" onChange={(info: any)=>this.fileChange(item.field_key, info)} fileList={this.state.fileList[item.field_key]}>
         {/*child = <Upload action="api/v1.0/tickets/upload_file" listType="text" onChange={(info)=>this.fileChange(item.field_key, info)}>*/}
           <Button icon={<UploadOutlined />}>Click to upload</Button>
         </Upload>
@@ -412,7 +404,7 @@ class CapitalFlowList extends Component<any, any> {
           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         } {...formItemChildOptions}
         >
-          {this.state.userSelectDict[item.field_key] && this.state.userSelectDict[item.field_key].map(d => (
+          {this.state.userSelectDict[item.field_key] && this.state.userSelectDict[item.field_key].map((d: { username: any; alias: any; }) => (
             <Option key={d.username} value={d.username}>{`${d.alias}(${d.username})`}</Option>
           ))}
 
@@ -428,7 +420,7 @@ class CapitalFlowList extends Component<any, any> {
           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         } {...formItemChildOptions}
          >
-          {this.state.userSelectDict[item.field_key] && this.state.userSelectDict[item.field_key].map(d => (
+          {this.state.userSelectDict[item.field_key] && this.state.userSelectDict[item.field_key].map((d: { username: any; alias: any; }) => (
             <Option key={d.username} value={d.username}>{`${d.alias}(${d.username})`}</Option>
           ))}
 
@@ -457,16 +449,46 @@ class CapitalFlowList extends Component<any, any> {
     )
   }
 
+  exportExcel  = async() => {
+    let searchValue = this.state.searchValue
+
+    const result = await capitalFlowDetailExecl(searchValue);
+    // //console.log("result",result)
+
+    // if (result.code === 0 ){
+      exportExcel(result, '资金流水统计表');
+    // }
+    // else {
+    //     message.error(result.msg)
+    //     }
+  }
+
+  onValuesChange = (changedValues: any, values: { create_time: { format: (arg0: string) => any; }[]; create_start: any; create_end: any; }) => {
+    if (values.create_time){
+      if (values.create_time[0]){
+        values.create_start = values.create_time[0].format('YYYY-MM-DD HH:mm:ss')
+      }
+      if (values.create_time[1]){
+        values.create_end = values.create_time[1].format('YYYY-MM-DD HH:mm:ss')
+      }
+      delete(values.create_time)
+
+    }
+
+    this.setState({searchValue: values})
+
+    };
+
   render() {
-    const form_items = [];
+    const form_items: {} | null | undefined = [];
     if (this.state.ticketDetailInfoData !== []){
-      this.state.ticketDetailInfoData.map(result => {
+      this.state.ticketDetailInfoData.map((result: any) => {
         let formItem = this.switchFormItem(result);
         if (formItem.props.children.props.label !== "当前处理人") {
           form_items.push(formItem);
         }
       })
-      console.log("form_items",form_items)
+      // //console.log("form_items",form_items)
     }
 
     const formItemLayout = {
@@ -543,6 +565,7 @@ class CapitalFlowList extends Component<any, any> {
             <Input placeholder="支持结算银行模糊查询" />
           </Form.Item>
         </Col>,
+
         <Col span={6} key={"card_number"}>
         <Form.Item
           name={"card_number"}
@@ -551,6 +574,7 @@ class CapitalFlowList extends Component<any, any> {
           <Input placeholder="支持结算卡号模糊查询" />
         </Form.Item>
         </Col>,
+
         <Col span={6} key={"capital_flow_type"}>
           <Form.Item
             name={"capital_flow_type"}
@@ -567,7 +591,7 @@ class CapitalFlowList extends Component<any, any> {
                 Select.Option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
             >
-              {this.state.capitalFlowTypeResult.map(d => (
+              {this.state.capitalFlowTypeResult.map((d: { id: React.Key | null | undefined; name: boolean | React.ReactChild | React.ReactFragment | React.ReactPortal | null | undefined; }) => (
                 <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
               ))}
             </Select>
@@ -602,6 +626,7 @@ class CapitalFlowList extends Component<any, any> {
             className="ant-advanced-search-form"
             ref={this.formRef}
             onFinish={this.searchCapitalFlow}
+            onValuesChange={this.onValuesChange}
           >
             <Row gutter={24}>
             {getFields()}
@@ -615,9 +640,16 @@ class CapitalFlowList extends Component<any, any> {
                 style={{ margin: '0 8px' }}
                 onClick={() => {
                   this.formRef.current.resetFields();
+                  this.setState({searchValue: ""})
                 }}
               >
                 重置
+              </Button>
+              <Button
+                style={{ margin: '0 8px' }}
+                onClick={this.exportExcel}
+              >
+                导出
               </Button>
             </Col>
           </Row>

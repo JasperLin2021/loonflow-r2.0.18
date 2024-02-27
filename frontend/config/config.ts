@@ -147,7 +147,7 @@ export default defineConfig({
       "name": "财务管理",
       // "icon": "dashboard",
       "icon": "AccountBookOutlined",
-      //access: 'superAdmin',
+      access: 'financeAdmin',
       routes: [
         {
           "path": "/finance/account",

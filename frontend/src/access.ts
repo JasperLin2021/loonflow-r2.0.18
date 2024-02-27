@@ -4,5 +4,6 @@ export default function access(initialState: { currentUser?: API.CurrentUser | u
   return {
     superAdmin: currentUser && currentUser.type_id === 2,
     workflowAdmin: currentUser && (currentUser.type_id === 1 || currentUser.type_id === 2),
+    financeAdmin: currentUser && (currentUser.type_id === 2 || currentUser.type_id === 3),
   };
 }

@@ -145,6 +145,64 @@ class FinanceBaseService(BaseService):
         return True, dict(capital_flow_result_object_format_list=capital_flow_result_object_format_list,
                           paginator_info=dict(per_page=per_page, page=page, total=paginator.count))
 
+    @classmethod
+    @auto_log
+    def get_capital_flow_Export(cls, card_bank: str='', card_number: str='', capital_flow_type: str='', create_start: str='', create_end: str='',
+                        reverse: int=1, per_page: int=10, page: int=1, **kwargs)->tuple:
+
+        query_params = Q(is_deleted=False)
+        if card_bank:
+            query_params &= Q(account__card_bank__contains=card_bank)
+        if card_number:
+            query_params &= Q(account__card_number__contains=card_number)
+        if capital_flow_type:
+            if capital_flow_type == "1":
+                query_params &= Q(capital_flow_type="收入")
+            else:
+                query_params &= Q(capital_flow_type="支出")
+        if create_start:
+            query_params &= Q(gmt_created__gte=create_start)
+        if create_end:
+            query_params &= Q(gmt_created__lte=create_end)
+        if reverse:
+            order_by_str = '-gmt_created'
+        else:
+            order_by_str = 'gmt_created'
+
+        capital_flow_objects = LoonCapitalFlow.objects.filter(query_params).order_by(order_by_str)
+        paginator = Paginator(capital_flow_objects, per_page)
+        try:
+            capital_flow_result_paginator = paginator.page(page)
+        except PageNotAnInteger:
+            capital_flow_result_paginator = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results
+            capital_flow_result_paginator = paginator.page(paginator.num_pages)
+        capital_flow_result_object_list = capital_flow_result_paginator.object_list
+        capital_flow_result_object_format_list = []
+
+        for capital_flow_result_object in capital_flow_result_object_list:
+            capital_flow_result_object_format_dict = dict()
+            capital_flow_result_object_format_dict["creator"] = capital_flow_result_object.creator
+            capital_flow_result_object_format_dict["gmt_created"] = capital_flow_result_object.gmt_created.strftime(
+                "%Y-%m-%d %H:%M:%S")
+            capital_flow_result_object_format_dict["card_bank"] = capital_flow_result_object.account.card_bank
+            capital_flow_result_object_format_dict["card_number"] = capital_flow_result_object.account.card_number
+            capital_flow_result_object_format_dict["account_balance_amount_before"] = float(
+                capital_flow_result_object.account_balance_amount_before)
+            capital_flow_result_object_format_dict["account_balance_amount_after"] = float(
+                capital_flow_result_object.account_balance_amount_after)
+            capital_flow_result_object_format_dict["total"] = float(capital_flow_result_object.total)
+            capital_flow_result_object_format_dict["capital_flow_type"] = capital_flow_result_object.capital_flow_type
+            capital_flow_result_object_format_dict["ticket_record_id"] = capital_flow_result_object.ticket_record.id
+
+
+            capital_flow_result_object_format_list.append(capital_flow_result_object_format_dict)
+
+        return True, dict(capital_flow_result_object_format_list=capital_flow_result_object_format_list,
+                          paginator_info=dict(per_page=per_page, page=page, total=paginator.count))
+
+
 
 
 finance_base_service_ins = FinanceBaseService()

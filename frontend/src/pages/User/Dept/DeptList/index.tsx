@@ -1,6 +1,8 @@
 import React, { Component } from "react";
-import {Table, Col, Form, Input, Card, Row, Button, Modal, Select, Radio, message, Popconfirm} from "antd";
-import {addDeptRequest, delDeptRequest, getDeptList, queryUserSimple, updateDeptRequest} from "@/services/user";
+import {Table, Col, Form, Input, Card, Row, Button, Modal, Select, Radio, message, Popconfirm, Upload, UploadProps, Spin} from "antd";
+import {addDeptRequest, delDeptRequest, getDeptList, queryUserSimple, updateDeptRequest, deptImportTemplateExecl, deptImportData, deptExportData} from "@/services/user";
+import { FileExcelOutlined, UploadOutlined, DownloadOutlined} from '@ant-design/icons';
+import { exportExcel } from '@/utils/excel'
 
 
 const { Option } = Select;
@@ -9,6 +11,7 @@ class DeptList extends Component<any, any> {
   constructor(props) {
     super();
     this.state = {
+      importLoading: false,
       deptResult: [],
       allDeptResult: [],
       deptDetail: {},
@@ -39,7 +42,7 @@ class DeptList extends Component<any, any> {
     this.fetchDeptData({per_page:10, page:1});
     this.fetchAlldeptData();
   }
-  
+
   fetchAlldeptData = async() => {
     const allResult = await getDeptList({per_page: 10000, page:1});
     if (allResult.code === 0) {
@@ -144,6 +147,64 @@ class DeptList extends Component<any, any> {
     }
   }
 
+  getDeptImportTemplate  = async() => {
+
+    const result = await deptImportTemplateExecl();
+    // //console.log("result",result)
+
+    // if (result.code === 0 ){
+      exportExcel(result, '部门管理导入模板');
+    // }
+    // else {
+    //     message.error(result.msg)
+    //     }
+  }
+  importExcel = async (item:any) =>{
+    // let result = {};
+    // console.log("this",this)
+    let data = new FormData();
+    data.append('file', item.file);
+    // this.importLoading = true;
+    this.setState({importLoading: true});
+    setTimeout(() => {
+      deptImportData(data)
+        .then((result) => {
+          if (result.code === 0){
+              message.success('导入成功');
+              this.fetchDeptData({});
+              this.fetchAlldeptData();
+            } else {
+              // console.log("result.msg",result)
+              message.error(`导入失败: ${result.msg}`);
+            }
+        })
+        .catch(err => {
+          message.error(`导入失败: 系统异常`);
+        })
+        .finally(() => {
+          this.setState({importLoading: false});
+        });
+    }, 1000);
+  }
+
+  uploadProps: UploadProps= {
+    name: 'file',
+    showUploadList: false,
+    customRequest: this.importExcel
+  };
+
+  getDeptExportData  = async() => {
+
+    const result = await deptExportData();
+    // //console.log("result",result)
+
+    // if (result.code === 0 ){
+      exportExcel(result, '部门管理表');
+    // }
+    // else {
+    //     message.error(result.msg)
+    //     }
+  }
 
   render(){
     const columns = [
@@ -181,11 +242,11 @@ class DeptList extends Component<any, any> {
         dataIndex: "label",
         key: "label"
       },
-      {
-        title: "创建人",
-        dataIndex: ["creator_info", "creator_alias"],
-        key: "creator"
-      },
+      // {
+      //   title: "创建人",
+      //   dataIndex: ["creator_info", "creator_alias"],
+      //   key: "creator"
+      // },
       {
         title: "创建时间",
         dataIndex: "gmt_created",
@@ -246,6 +307,20 @@ class DeptList extends Component<any, any> {
               <Col span={24} style={{ textAlign: 'right' }}>
                 <Button type="primary" onClick={()=>this.showDeptModal(0)}>
                   新增
+                </Button>
+                &nbsp;
+                <Button type="primary" icon={<FileExcelOutlined />} onClick={this.getDeptImportTemplate}>
+                  模板下载
+                </Button>
+                &nbsp;
+                <div style={{display: 'inline-block'}}>
+                  <Upload {...this.uploadProps} >
+                    <Button type="primary" icon={<UploadOutlined />}>导入</Button>
+                  </Upload>
+                </div>
+                &nbsp;
+                <Button type="primary" icon={<DownloadOutlined />} onClick={this.getDeptExportData}>
+                  导出
                 </Button>
               </Col>
             </Row>
@@ -336,6 +411,16 @@ class DeptList extends Component<any, any> {
             </Form.Item>
 
           </Form>
+        </Modal>
+        <Modal
+            visible={this.state.importLoading}
+            footer={null}
+            maskClosable={false}
+            closable={false}>
+          <div>
+            {/* <Spin style="margin-right: 12px;" />正在导入中, 请等待... */}
+            <Spin />正在导入中, 请等待...
+          </div>
         </Modal>
 
       </div>

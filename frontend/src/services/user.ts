@@ -242,3 +242,47 @@ export async function changeUserPassword(params: passwordType) {
     data: params
   })
 }
+
+
+export async function deptImportTemplateExecl(){
+  return request<API.CommonResponse> (`/api/v1.0/accounts/depts/import_template`, {
+    method: 'get',
+    responseType: 'blob',
+  })
+}
+
+
+export async function deptImportData(params: any){
+  return request<API.CommonResponse> (`/api/v1.0/accounts/depts/import_data`, {
+    method: 'post',
+    data: params
+  })
+}
+
+export async function deptExportData(){
+  return request<API.CommonResponse> (`/api/v1.0/accounts/depts/export`, {
+    method: 'get',
+    responseType: 'blob',
+  })
+}
+
+export async function userImportTemplateExecl(){
+  return request<API.CommonResponse> (`/api/v1.0/accounts/users/import_template`, {
+    method: 'get',
+    responseType: 'blob',
+  })
+}
+
+export async function userImportData(params: any){
+  return request<API.CommonResponse> (`/api/v1.0/accounts/users/import_data`, {
+    method: 'post',
+    data: params
+  })
+}
+
+export async function userExportData(){
+  return request<API.CommonResponse> (`/api/v1.0/accounts/users/export`, {
+    method: 'get',
+    responseType: 'blob',
+  })
+}

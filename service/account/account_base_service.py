@@ -489,7 +489,10 @@ class AccountBaseService(BaseService):
         :param password:
         :return:
         """
-        password_str = make_password(password, None, 'pbkdf2_sha256')
+        if password is None:
+            password_str = make_password("123456", None, 'pbkdf2_sha256')
+        else:
+            password_str = make_password(password, None, 'pbkdf2_sha256')
         user_obj = LoonUser(username=username, alias=alias, email=email, phone=phone,
                             is_active=is_active, type_id=type_id,
                             creator=creator, password=password_str)

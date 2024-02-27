@@ -1,6 +1,7 @@
 import {Button, Form, Input, Card, message} from 'antd';
 import React from "react";
 import {changeUserPassword} from "@/services/user";
+import { history } from 'umi';
 
 const layout = {
   labelCol: { span: 8},
@@ -26,6 +27,7 @@ const ChangePwd = () => {
     const result = await changeUserPassword(values)
     if (result.code === 0) {
       message.success('修改密码成功')
+      history.push('/user/login')
     } else {
       message.error(result.msg)
     }

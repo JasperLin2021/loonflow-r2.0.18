@@ -1,18 +1,22 @@
 import json
 from datetime import datetime
 
-from _decimal import Decimal
+
+from django.http import HttpResponse
+from openpyxl.drawing.text import Hyperlink
+from openpyxl.styles import Font
+from openpyxl.workbook import Workbook
 from schema import Schema, And, Optional, Use
 
 from apps.loon_base_view import LoonBaseView
+from apps.ticket.models import TicketRecord
+from extensions.utils import add_hyperlink, get_column_letter, convert_to_decimal
 from service.finance.finance_base_service import finance_base_service_ins
 from service.format_response import api_response
+from service.ticket.ticket_base_service import ticket_base_service_ins
 
-def convert_to_decimal(value):
-    try:
-        return Decimal(value)
-    except (TypeError, ValueError):
-        raise ValueError('initial_balance_amount must be a number')
+
+
 
 # Create your views here.
 class LoonAccountView(LoonBaseView):
@@ -158,3 +162,79 @@ class LoonCapitalFlowView(LoonBaseView):
         else:
             code, data = -1, ''
         return api_response(code, msg, data)
+
+
+class LoonCapitalFlowExportView(LoonBaseView):
+    def get(self, request, *args, **kwargs):
+        username = request.META.get('HTTP_USERNAME')
+        result = LoonCapitalFlowView.get(self, request, *args, **kwargs)
+        # 将字节数据转换为字符串
+        data_str = result.content.decode('utf-8')
+        # 解析JSON字符串
+        json_data = json.loads(data_str)
+
+        export_list = []
+
+        for item in json_data['data']['value']:
+
+            ticket_id = item['ticket_record_id']
+            ticket_detail = ticket_base_service_ins.get_ticket_detail(ticket_id, username)
+            ticket_detail_field_list = ticket_detail[1]['field_list']
+            ticket_obj = TicketRecord.objects.filter(id=ticket_id, is_deleted=False).first()
+            item['流水号'] = ticket_obj.sn
+
+            ticket_detail_format = dict()
+            for key in ticket_detail_field_list:
+                if key['field_name'] == "附件上传" and key['field_value'] != '[]':
+                    url_list = []
+                    for u in json.loads(key['field_value']):
+                        url_list.append("http://127.0.0.1:8001" + u.get("url"))
+                    ticket_detail_format[key['field_name']] = url_list
+                elif key['field_name'] == "当前处理人":
+                    continue
+                else:
+                    ticket_detail_format[key['field_name']] = key['field_value']
+                # print(key)
+
+            item.update(ticket_detail_format)
+            export_list.append(item)
+
+        # print(export_list)
+        # 创建一个新的工作簿
+        workbook = Workbook()
+        # 获取工作表
+        sheet = workbook.active
+        # 写入表头
+        header = list(export_list[0].keys())
+        header[header.index('创建人')] = '提单人'
+        header[header.index('creator')] = '创建人'
+        header[header.index('gmt_created')] = '创建时间'
+        header[header.index('card_bank')] = '结算银行'
+        header[header.index('card_number')] = '结算卡号'
+        header[header.index('account_balance_amount_before')] = '结算前余额'
+        header[header.index('account_balance_amount_after')] = '结算后余额'
+        header[header.index('total')] = '结算金额'
+        header[header.index('capital_flow_type')] = '流水类型'
+        header[header.index('ticket_record_id')] = '工单号'
+        sheet.append(header)
+
+        display_text = "点击查看附件"
+        for index, item in enumerate(export_list):
+            row = list(item.values())
+            attachment_column = get_column_letter(len(row))
+            attachment_link = row[-1]
+
+            row = row[:-1]
+            sheet.append(row)
+
+            if attachment_link != "[]":
+                add_hyperlink(sheet, sheet[f'{attachment_column}{index + 2}'], attachment_link, display_text)
+
+        response = HttpResponse(content_type='application/vnd.ms-excel')
+        response['Content-Disposition'] = 'attachment;filename=data.xlsx'
+        workbook.save(response)
+
+        # print(response)
+
+        return response
+

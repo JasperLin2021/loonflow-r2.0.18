@@ -62,3 +62,12 @@ export async function getCapitalFlowList(params: getCapitalFlowListType) {
     params: params
   })
 }
+
+
+export async function capitalFlowDetailExecl(params: any) {
+  return request<API.CommonResponse> ('/api/v1.0/finance/capitalflow/export', {
+    method: 'get',
+    responseType: 'blob',
+    params: params
+  })
+}

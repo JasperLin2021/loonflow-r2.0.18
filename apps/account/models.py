@@ -8,7 +8,7 @@ class LoonDept(BaseModel):
     """
     部门
     """
-    name = models.CharField('名称', max_length=50, help_text='部门名称')
+    name = models.CharField('名称', max_length=50, help_text='部门名称', unique=True)
     parent_dept_id = models.IntegerField('上级部门id', blank=True, default=0)
     leader = models.CharField('部门leader', max_length=50, blank=True, default='', help_text='部门的leader, loonuser表中的用户名')
     approver = models.CharField('审批人', max_length=100, blank=True, default='', help_text='loonuser表中的用户名, 逗号隔开多个user。当工作流设置为leader审批时， 优先以审批人为准，如果审批人为空，则取leader')
@@ -127,9 +127,9 @@ class LoonUser(AbstractBaseUser):
     用户
     """
     username = models.CharField('用户名', max_length=50, unique=True)
-    alias = models.CharField('姓名', max_length=50, default='')
-    email = models.EmailField('邮箱', max_length=255)
-    phone = models.CharField('电话', max_length=13, default='')
+    alias = models.CharField('姓名', max_length=50, default='', null=True, blank=True)
+    email = models.EmailField('邮箱', max_length=255, default='', null=True, blank=True)
+    phone = models.CharField('电话', max_length=13, default='', null=True, blank=True)
     is_active = models.BooleanField('已激活', default=True)
     type_id = models.IntegerField('用户类型', default=0)  # 见service.common.constant_service中定义
 

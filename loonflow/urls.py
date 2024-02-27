@@ -17,6 +17,8 @@ Including another URLconf
 from django.conf.urls.static import static
 from django.conf import settings
 from django.urls import path, include
+
+
 from apps.account.views import LoonJwtLoginView
 
 
@@ -30,3 +32,4 @@ urlpatterns = [
     path('api/v1.0/finance', include('apps.finance.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

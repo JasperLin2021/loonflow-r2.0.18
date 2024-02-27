@@ -1,7 +1,9 @@
 import React, { Component } from "react";
-import {Table, Col, Card, Row, Form, Input, Button, message, Modal, Select, Radio, Popconfirm} from "antd";
-import {addUser, delUserRequest, getDeptList, getUserList, resetUserPasswd, updateUser} from "@/services/user";
+import {Table, Col, Card, Row, Form, Input, Button, message, Modal, Select, Radio, Popconfirm, Upload, UploadProps, Spin} from "antd";
+import {addUser, delUserRequest, getDeptList, getUserList, resetUserPasswd, updateUser, userImportTemplateExecl, userImportData, userExportData} from "@/services/user";
 import UserRoleList from "@/pages/User/User/UserRoleList";
+import { FileExcelOutlined, UploadOutlined, DownloadOutlined} from '@ant-design/icons';
+import { exportExcel } from '@/utils/excel'
 
 const { Option } = Select;
 
@@ -10,6 +12,7 @@ class UserList extends Component<any, any> {
   constructor(props) {
     super();
     this.state = {
+      importLoading: false,
       userResult: [],
       deptResult: [],
       userListLoading: false,
@@ -112,7 +115,8 @@ class UserList extends Component<any, any> {
   handleUserCancel = () => {
     this.setState({
       userModalVisible: false,
-      userRoleModalVisible: false
+      userRoleModalVisible: false,
+      userDetail: {},
     })
   }
 
@@ -167,6 +171,66 @@ class UserList extends Component<any, any> {
     this.setState({userIdForRole: userId, userRoleModalVisible:true});
   }
 
+  importExcel = async (item:any) =>{
+    // let result = {};
+    // console.log("this",this)
+    let data = new FormData();
+    data.append('file', item.file);
+    // this.importLoading = true;
+    this.setState({importLoading: true});
+    setTimeout(() => {
+      userImportData(data)
+        .then((result) => {
+          if (result.code === 0){
+              message.success('导入成功');
+              this.fetchUserData({});
+            } else {
+              // console.log("result.msg",result)
+              message.error(`导入失败: ${result.msg}`);
+            }
+        })
+        .catch(err => {
+          message.error(`导入失败: 系统异常`);
+        })
+        .finally(() => {
+          this.setState({importLoading: false});
+        });
+    }, 1000);
+  }
+
+  uploadProps: UploadProps= {
+    name: 'file',
+    showUploadList: false,
+    customRequest: this.importExcel
+  };
+
+  getUserImportTemplate  = async() => {
+
+    const result = await userImportTemplateExecl();
+    // //console.log("result",result)
+
+    // if (result.code === 0 ){
+      exportExcel(result, '用户管理导入模板');
+    // }
+    // else {
+    //     message.error(result.msg)
+    //     }
+  }
+
+  getUserExportData  = async() => {
+
+    const result = await userExportData();
+    // //console.log("result",result)
+
+    // if (result.code === 0 ){
+      exportExcel(result, '用户管理表');
+    // }
+    // else {
+    //     message.error(result.msg)
+    //     }
+  }
+
+
   render() {
 
     const columns = [
@@ -175,21 +239,21 @@ class UserList extends Component<any, any> {
         dataIndex: "username",
         key: "username"
       },
-      {
-        title: "姓名",
-        dataIndex: "alias",
-        key: "alias"
-      },
-      {
-        title: "邮箱",
-        dataIndex: "email",
-        key: "email"
-      },
-      {
-        title: "电话",
-        dataIndex: "phone",
-        key: "phone"
-      },
+      // {
+      //   title: "姓名",
+      //   dataIndex: "alias",
+      //   key: "alias"
+      // },
+      // {
+      //   title: "邮箱",
+      //   dataIndex: "email",
+      //   key: "email"
+      // },
+      // {
+      //   title: "电话",
+      //   dataIndex: "phone",
+      //   key: "phone"
+      // },
       {
         title: "部门",
         key: "user_dept",
@@ -224,16 +288,18 @@ class UserList extends Component<any, any> {
             return "工作流管理员"
           } else if (record.type_id === 2) {
             return "超级管理员"
-          } else {
+          } else if (record.type_id === 3) {
+            return "财务管理员"
+          }else {
             return "未知"
           }
         }
       },
-      {
-        title: "创建人",
-        dataIndex: ["creator_info", "creator_alias"],
-        key: "creator_info"
-      },
+      // {
+      //   title: "创建人",
+      //   dataIndex: ["creator_info", "creator_alias"],
+      //   key: "creator_info"
+      // },
       {
         title: "创建时间",
         dataIndex: "gmt_created",
@@ -303,6 +369,20 @@ class UserList extends Component<any, any> {
               <Button type="primary" onClick={()=>this.showUserModal(0)}>
                 新增
               </Button>
+              &nbsp;
+              <Button type="primary" icon={<FileExcelOutlined />} onClick={this.getUserImportTemplate}>
+                模板下载
+              </Button>
+              &nbsp;
+              <div style={{display: 'inline-block'}}>
+                <Upload {...this.uploadProps} >
+                  <Button type="primary" icon={<UploadOutlined />}>导入</Button>
+                </Upload>
+              </div>
+              &nbsp;
+              <Button type="primary" icon={<DownloadOutlined />} onClick={this.getUserExportData}>
+                导出
+              </Button>
               </Col>
           </Row>
         </Form>
@@ -325,7 +405,7 @@ class UserList extends Component<any, any> {
             <Form.Item name="username" label="用户名" rules={[{ required: true }]} initialValue={this.getUserDetailField('username')}>
               <Input />
             </Form.Item>
-            <Form.Item name="alias" label="姓名" rules={[{ required: true }]} initialValue={this.getUserDetailField('alias')}>
+            {/* <Form.Item name="alias" label="姓名" rules={[{ required: true }]} initialValue={this.getUserDetailField('alias')}>
               <Input />
             </Form.Item>
             <Form.Item name="email" label="邮箱" rules={[{ required: true }]} initialValue={this.getUserDetailField('email')}>
@@ -333,7 +413,7 @@ class UserList extends Component<any, any> {
             </Form.Item>
             <Form.Item name="phone" label="电话" rules={[{ required: true }]} initialValue={this.getUserDetailField('phone')}>
               <Input />
-            </Form.Item>
+            </Form.Item> */}
             <Form.Item name="dept" label="部门" rules={[{ required: true }]}  initialValue={this.getUserDetailField('dept')}>
               <Select
                 mode="multiple"
@@ -358,6 +438,7 @@ class UserList extends Component<any, any> {
                 <Radio value={0}>普通用户</Radio>
                 <Radio value={1}>工作流管理员</Radio>
                 <Radio value={2}>超级管理员</Radio>
+                <Radio value={3}>财务管理员</Radio>
               </Radio.Group>
             </Form.Item>
 
@@ -381,6 +462,17 @@ class UserList extends Component<any, any> {
         >
           <UserRoleList userId={this.state.userIdForRole}/>
 
+        </Modal>
+
+        <Modal
+            visible={this.state.importLoading}
+            footer={null}
+            maskClosable={false}
+            closable={false}>
+          <div>
+            {/* <Spin style="margin-right: 12px;" />正在导入中, 请等待... */}
+            <Spin />正在导入中, 请等待...
+          </div>
         </Modal>
       </div>
 

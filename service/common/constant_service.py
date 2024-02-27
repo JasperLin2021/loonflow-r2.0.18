@@ -7,6 +7,7 @@ class ConstantService(BaseService):
         self.ACCOUNT_TYPE_COMMON = 0  # 普通用户
         self.ACCOUNT_TYPE_WORKFLOW_ADMIN = 1  # 工作流管理员
         self.ACCOUNT_TYPE_SUPER_ADMIN = 2  # 超级管理员
+        self.ACCOUNT_TYPE_FINANCE_ADMIN = 3  # 财务管理员
 
         self.STATE_TYPE_START = 1  # 开始
         self.STATE_TYPE_END = 2  # 结束   distribute_type_id
